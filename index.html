@@ -41,7 +41,7 @@
         h1 { font-size: 1.5rem; font-weight: 600; letter-spacing: -0.03em; margin-bottom: 0.5rem; }
         p.subtitle { color: var(--text-secondary); font-size: 0.875rem; margin-bottom: 2rem; }
 
-        .form-group { margin-bottom: 1.25rem; }
+        .form-group { margin-bottom: 1.25rem; position: relative; }
         .row { display: flex; gap: 1rem; }
         .row .form-group { flex: 1; }
 
@@ -75,6 +75,34 @@
 
         input:focus { border-color: var(--text-secondary); }
         input::placeholder { color: #444; }
+
+        .autocomplete-list {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
+            background-color: var(--bg-color);
+            border: 1px solid var(--text-secondary);
+            border-top: none;
+            z-index: 10;
+            max-height: 200px;
+            overflow-y: auto;
+            display: none;
+            list-style: none;
+            margin: 0;
+            padding: 0;
+        }
+
+        .autocomplete-list li {
+            padding: 0.75rem 1rem;
+            cursor: pointer;
+            border-bottom: 1px solid var(--border-color);
+            font-size: 0.875rem;
+            color: var(--text-primary);
+        }
+
+        .autocomplete-list li:last-child { border-bottom: none; }
+        .autocomplete-list li:hover { background-color: var(--card-bg); }
 
         button.primary {
             width: 100%;
@@ -249,14 +277,14 @@
     <form id="search-form">
         <div class="form-group">
             <label>Comuna</label>
-            <input type="text" id="comuna_nombre" placeholder="Ej: MARCHIGUE" list="lista-comunas" autocomplete="off" required>
-            <datalist id="lista-comunas"></datalist>
+            <input type="text" id="comuna_nombre" placeholder="Ej: MARCHIGUE" autocomplete="off" required>
+            <ul id="autocomplete-list" class="autocomplete-list"></ul>
         </div>
 
         <div class="row">
             <div class="form-group">
                 <label>Manzana</label>
-                <input type="number" id="manzana" placeholder="1215" required>
+                <input type="number" id="manzana" placeholder="2313" required>
             </div>
             <div class="form-group">
                 <label>Predio</label>
@@ -371,18 +399,47 @@
         "LA FLORIDA": "13110"
     };
 
-    window.onload = () => {
-        const dataList = document.getElementById('lista-comunas');
-        Object.keys(COMUNAS_SII).sort().forEach(comuna => {
-            const option = document.createElement('option');
-            option.value = comuna;
-            dataList.appendChild(option);
-        });
-    };
+    const comunasKeys = Object.keys(COMUNAS_SII).sort();
+    const inputComuna = document.getElementById('comuna_nombre');
+    const autocompleteList = document.getElementById('autocomplete-list');
 
     function normalizarTexto(texto) {
         return texto.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toUpperCase().trim();
     }
+
+    inputComuna.addEventListener('input', function() {
+        const val = normalizarTexto(this.value);
+        autocompleteList.innerHTML = '';
+        
+        if (!val) {
+            autocompleteList.style.display = 'none';
+            return;
+        }
+
+        const matches = comunasKeys.filter(c => normalizarTexto(c).includes(val));
+        
+        if (matches.length > 0) {
+            matches.forEach(match => {
+                const li = document.createElement('li');
+                li.textContent = match;
+                li.addEventListener('mousedown', function(e) {
+                    e.preventDefault();
+                    inputComuna.value = match;
+                    autocompleteList.style.display = 'none';
+                });
+                autocompleteList.appendChild(li);
+            });
+            autocompleteList.style.display = 'block';
+        } else {
+            autocompleteList.style.display = 'none';
+        }
+    });
+
+    document.addEventListener('click', function(e) {
+        if (e.target !== inputComuna) {
+            autocompleteList.style.display = 'none';
+        }
+    });
 
     function formatCLP(value) {
         if (value === null || value === undefined) return "$0";
@@ -411,10 +468,8 @@
     document.getElementById('search-form').addEventListener('submit', async function(e) {
         e.preventDefault();
         
-        const inputComuna = document.getElementById('comuna_nombre').value;
         const manzana = document.getElementById('manzana').value;
         const predio = document.getElementById('predio').value;
-        
         const errorMsg = document.getElementById('error-msg');
         const resultsWrapper = document.getElementById('results-wrapper');
         const btnSubmit = document.getElementById('btn-submit');
@@ -424,11 +479,11 @@
         btnSubmit.disabled = true;
         btnSubmit.innerText = 'Consultando SII...';
 
-        const comunaNorm = normalizarTexto(inputComuna);
+        const comunaNorm = normalizarTexto(inputComuna.value);
         const codigoComuna = COMUNAS_SII[comunaNorm];
 
         if (!codigoComuna) {
-            errorMsg.innerText = `No se reconocio la comuna '${inputComuna}'.`;
+            errorMsg.innerText = `No se reconocio la comuna '${inputComuna.value}'.`;
             errorMsg.style.display = 'block';
             btnSubmit.disabled = false;
             btnSubmit.innerText = 'Buscar Informacion';
