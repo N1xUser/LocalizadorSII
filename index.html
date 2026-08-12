@@ -1,0 +1,463 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="color-scheme" content="dark">
+    <title>Localizador SII</title>
+    <style>
+        :root {
+            --bg-color: #000000;
+            --card-bg: #0a0a0a;
+            --border-color: #333333;
+            --text-primary: #ededed;
+            --text-secondary: #888888;
+            --acc-color: #ffffff;
+            --acc-color-hover: #e0e0e0;
+            --radius: 0px; /* Esquinas rectas */
+            --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-primary);
+            font-family: var(--font-sans);
+            line-height: 1.5;
+            -webkit-font-smoothing: antialiased;
+            display: flex;
+            justify-content: center;
+            min-height: 100vh;
+            padding: 2rem 1.5rem;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 440px;
+        }
+
+        h1 {
+            font-size: 1.5rem;
+            font-weight: 600;
+            letter-spacing: -0.03em;
+            margin-bottom: 0.5rem;
+        }
+
+        p.subtitle {
+            color: var(--text-secondary);
+            font-size: 0.875rem;
+            margin-bottom: 2rem;
+        }
+
+        .form-group { margin-bottom: 1.25rem; }
+        .row { display: flex; gap: 1rem; }
+        .row .form-group { flex: 1; }
+
+        label {
+            display: block;
+            font-size: 0.875rem;
+            font-weight: 500;
+            margin-bottom: 0.5rem;
+            color: var(--text-secondary);
+        }
+
+        input {
+            width: 100%;
+            background-color: transparent;
+            border: 1px solid var(--border-color);
+            color: var(--text-primary);
+            border-radius: var(--radius);
+            padding: 0.75rem 1rem;
+            font-size: 1rem;
+            font-family: var(--font-sans);
+            transition: border-color 0.15s ease;
+            outline: none;
+        }
+
+        /* Quitar spinners de inputs de números */
+        input[type="number"]::-webkit-outer-spin-button,
+        input[type="number"]::-webkit-inner-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
+        }
+        input[type="number"] { -moz-appearance: textfield; }
+
+        input:focus { border-color: var(--text-secondary); }
+        input::placeholder { color: #444; }
+
+        button.primary {
+            width: 100%;
+            background-color: var(--acc-color);
+            color: var(--bg-color);
+            border: none;
+            border-radius: var(--radius);
+            padding: 0.75rem 1rem;
+            font-size: 0.875rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background-color 0.15s ease;
+            margin-top: 0.5rem;
+        }
+        button.primary:hover { background-color: var(--acc-color-hover); }
+        button.primary:disabled { opacity: 0.6; cursor: not-allowed; }
+
+        .error-msg {
+            background-color: rgba(255, 0, 0, 0.1);
+            color: #ff4d4f;
+            border: 1px solid rgba(255, 0, 0, 0.3);
+            padding: 0.75rem;
+            border-radius: var(--radius);
+            font-size: 0.875rem;
+            margin-bottom: 1.5rem;
+            display: none;
+        }
+
+        /* Bloque de resultados */
+        .results-wrapper {
+            margin-top: 2.5rem;
+            border-top: 1px solid var(--border-color);
+            padding-top: 2rem;
+            display: none;
+            animation: fadeIn 0.4s ease forwards;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .results-wrapper h2 { font-size: 1.125rem; font-weight: 600; margin-bottom: 1.5rem; }
+
+        .copy-block {
+            background-color: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius);
+            padding: 1rem;
+            margin-bottom: 1.5rem;
+            position: relative;
+        }
+        .copy-block pre {
+            font-family: var(--font-mono);
+            font-size: 0.875rem;
+            color: var(--text-primary);
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            line-height: 1.6;
+        }
+        .btn-icon {
+            background: transparent;
+            border: 1px solid var(--border-color);
+            color: var(--text-secondary);
+            border-radius: var(--radius);
+            padding: 0.35rem 0.75rem;
+            font-size: 0.75rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .btn-icon:hover {
+            color: var(--text-primary);
+            border-color: var(--text-secondary);
+            background: rgba(255,255,255,0.05);
+        }
+        .header-flex {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 0.75rem;
+        }
+        .header-flex span {
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+        .individual-list { list-style: none; display: flex; flex-direction: column; gap: 0.75rem; }
+        .individual-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding-bottom: 0.75rem;
+            border-bottom: 1px solid #222;
+        }
+        .individual-item:last-child { border-bottom: none; padding-bottom: 0; }
+        .individual-data {
+            font-family: var(--font-mono);
+            font-size: 0.875rem;
+            color: var(--text-primary);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            margin-right: 1rem;
+        }
+        .individual-label {
+            display: block;
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+            margin-bottom: 0.2rem;
+            font-family: var(--font-sans);
+        }
+        a.link-map { color: #3291ff; text-decoration: none; }
+        a.link-map:hover { text-decoration: underline; }
+
+        /* Toast cuadrado */
+        #toast {
+            visibility: hidden;
+            min-width: 250px;
+            background-color: var(--acc-color);
+            color: var(--bg-color);
+            text-align: center;
+            border-radius: var(--radius);
+            padding: 12px 24px;
+            position: fixed;
+            z-index: 1;
+            left: 50%;
+            bottom: 30px;
+            transform: translateX(-50%);
+            font-size: 0.875rem;
+            font-weight: 500;
+            opacity: 0;
+            transition: opacity 0.3s, bottom 0.3s;
+        }
+        #toast.show { visibility: visible; opacity: 1; bottom: 40px; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <header>
+        <h1>Localizador SII</h1>
+        <p class="subtitle">Ingresa el rol para obtener coordenadas y mapa.</p>
+    </header>
+
+    <div id="error-msg" class="error-msg"></div>
+
+    <form id="search-form">
+        <div class="form-group">
+            <label>Comuna</label>
+            <input type="text" id="comuna_nombre" placeholder="Ej: Rancagua" list="lista-comunas" autocomplete="off" required>
+            <datalist id="lista-comunas"></datalist>
+        </div>
+
+        <div class="row">
+            <div class="form-group">
+                <label>Manzana</label>
+                <input type="number" id="manzana" placeholder="1412" required>
+            </div>
+            <div class="form-group">
+                <label>Predio</label>
+                <input type="number" id="predio" placeholder="21" required>
+            </div>
+        </div>
+
+        <button type="submit" class="primary" id="btn-submit">Buscar Ubicación</button>
+    </form>
+
+    <div id="results-wrapper" class="results-wrapper">
+        <h2>Resultados</h2>
+
+        <!-- Bloque Completo -->
+        <div class="copy-block">
+            <div class="header-flex">
+                <span>Todo el bloque</span>
+                <button type="button" class="btn-icon" onclick="copiarTexto('full-text')">Copiar</button>
+            </div>
+            <pre id="full-text"></pre>
+        </div>
+
+        <!-- Copia Individual -->
+        <div class="copy-block" style="padding-top: 1.5rem;">
+            <ul class="individual-list">
+                <li class="individual-item">
+                    <div style="overflow: hidden;">
+                        <span class="individual-label">Formato DMS</span>
+                        <div class="individual-data" id="dms-text"></div>
+                    </div>
+                    <button type="button" class="btn-icon" onclick="copiarTexto('dms-text')">Copiar</button>
+                </li>
+                <li class="individual-item">
+                    <div style="overflow: hidden;">
+                        <span class="individual-label">Formato Decimal</span>
+                        <div class="individual-data" id="dec-text"></div>
+                    </div>
+                    <button type="button" class="btn-icon" onclick="copiarTexto('dec-text')">Copiar</button>
+                </li>
+                <li class="individual-item">
+                    <div style="overflow: hidden;">
+                        <span class="individual-label">Enlace</span>
+                        <div class="individual-data">
+                            <a href="#" target="_blank" class="link-map" id="link-text"></a>
+                        </div>
+                    </div>
+                    <button type="button" class="btn-icon" onclick="copiarTexto('link-text')">Copiar</button>
+                </li>
+            </ul>
+        </div>
+    </div>
+</div>
+
+<div id="toast">Copiado al portapapeles</div>
+
+<script>
+    const COMUNAS_SII = {
+        "RANCAGUA": "6101", "MACHALI": "6102", "GRANEROS": "6103",
+        "SAN FRANCISCO DE MOSTAZAL": "6104", "MOSTAZAL": "6104",
+        "DONIHUE": "6105", "COLTAUCO": "6106", "CODEGUA": "6107",
+        "PEUMO": "6108", "LAS CABRAS": "6109", "SAN VICENTE": "6110",
+        "SAN VICENTE DE TAGUA TAGUA": "6110", "PICHIDEGUA": "6111",
+        "RENGO": "6112", "REQUINOA": "6113", "OLIVAR": "6114",
+        "MALLOA": "6115", "COINCO": "6116", "QUINTA DE TILCOCO": "6117",
+        "SAN FERNANDO": "6201", "CHIMBARONGO": "6202", "NANCAGUA": "6203",
+        "PLACILLA": "6204", "SANTA CRUZ": "6205", "LOLOL": "6206",
+        "PALMILLA": "6207", "PERALILLO": "6208", "CHEPICA": "6209",
+        "PUMANQUE": "6214", "PICHILEMU": "6301", "NAVIDAD": "6302",
+        "LITUECHE": "6303", "LA ESTRELLA": "6304", "MARCHIGUE": "6305",
+        "PAREDONES": "6306", "SANTIAGO": "13101", "PROVIDENCIA": "13123",
+        "LAS CONDES": "13114", "MAIPU": "13119", "PUENTE ALTO": "13201",
+        "LA FLORIDA": "13110"
+    };
+
+    window.onload = () => {
+        const dataList = document.getElementById('lista-comunas');
+        Object.keys(COMUNAS_SII).sort().forEach(comuna => {
+            const option = document.createElement('option');
+            option.value = comuna;
+            dataList.appendChild(option);
+        });
+    };
+
+    function normalizarTexto(texto) {
+        return texto.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toUpperCase().trim();
+    }
+
+    function decimalToDMS(lat, lng) {
+        const toDMS = (val, isLat) => {
+            const absVal = Math.abs(val);
+            const degrees = Math.floor(absVal);
+            const minutesFull = (absVal - degrees) * 60;
+            const minutes = Math.floor(minutesFull);
+            const seconds = ((minutesFull - minutes) * 60).toFixed(1);
+            const direction = isLat ? (val < 0 ? "S" : "N") : (val < 0 ? "W" : "E");
+            const padM = String(minutes).padStart(2, '0');
+            const padS = String(seconds).padStart(4, '0');
+            return `${degrees}°${padM}'${padS}"${direction}`;
+        };
+        return `${toDMS(lat, true)} ${toDMS(lng, false)}`;
+    }
+
+    document.getElementById('search-form').addEventListener('submit', async function(e) {
+        e.preventDefault();
+        
+        const inputComuna = document.getElementById('comuna_nombre').value;
+        const manzana = document.getElementById('manzana').value;
+        const predio = document.getElementById('predio').value;
+        const errorMsg = document.getElementById('error-msg');
+        const resultsWrapper = document.getElementById('results-wrapper');
+        const btnSubmit = document.getElementById('btn-submit');
+
+        errorMsg.style.display = 'none';
+        resultsWrapper.style.display = 'none';
+        btnSubmit.disabled = true;
+        btnSubmit.innerText = 'Buscando...';
+
+        const comunaNorm = normalizarTexto(inputComuna);
+        const codigoComuna = COMUNAS_SII[comunaNorm];
+
+        if (!codigoComuna) {
+            errorMsg.innerText = `No se reconoció la comuna '${inputComuna}'.`;
+            errorMsg.style.display = 'block';
+            btnSubmit.disabled = false;
+            btnSubmit.innerText = 'Buscar Ubicación';
+            return;
+        }
+
+        const payload = {
+            metaData: {
+                namespace: "cl.sii.sdi.lob.bbrr.mapas.data.api.interfaces.MapasFacadeService/getPredioNacional",
+                conversationId: "UNAUTHENTICATED-CALL",
+                transactionId: "a"
+            },
+            data: {
+                predio: { comuna: codigoComuna, manzana: manzana, predio: predio },
+                servicios: []
+            }
+        };
+
+        try {
+            const proxyUrl = "https://corsproxy.io/?https://www4.sii.cl/mapasui/services/data/mapasFacadeService/getPredioNacional";
+            
+            const response = await fetch(proxyUrl, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+
+            if (!response.ok) throw new Error("Fallo en la conexión");
+
+            const data = await response.json();
+            const resultData = data.data || {};
+            const lat = resultData.ubicacionX;
+            const lng = resultData.ubicacionY;
+
+            if (lat == null || lng == null) {
+                throw new Error(`No se encontró la ubicación para el ROL ${manzana}-${predio} en ${inputComuna}.`);
+            }
+
+            const decimalStr = `${lat}, ${lng}`;
+            const dmsStr = decimalToDMS(lat, lng);
+            const gmapsUrl = `https://www.google.com/maps?q=${lat},{lng}`;
+            const fullBlock = `${dmsStr}\n${decimalStr}\n${gmapsUrl}`;
+
+            document.getElementById('full-text').innerText = fullBlock;
+            document.getElementById('dms-text').innerText = dmsStr;
+            document.getElementById('dec-text').innerText = decimalStr;
+            document.getElementById('link-text').innerText = gmapsUrl;
+            document.getElementById('link-text').href = gmapsUrl;
+
+            resultsWrapper.style.display = 'block';
+
+        } catch (err) {
+            errorMsg.innerText = err.message;
+            errorMsg.style.display = 'block';
+        } finally {
+            btnSubmit.disabled = false;
+            btnSubmit.innerText = 'Buscar Ubicación';
+        }
+    });
+
+    function copiarTexto(elementId) {
+        const elem = document.getElementById(elementId);
+        const textToCopy = elem.innerText || elem.textContent;
+        
+        if (navigator.clipboard && window.isSecureContext) {
+            navigator.clipboard.writeText(textToCopy).then(mostrarToast);
+        } else {
+            const textArea = document.createElement("textarea");
+            textArea.value = textToCopy;
+            textArea.style.position = "fixed";
+            textArea.style.left = "-999999px";
+            document.body.appendChild(textArea);
+            textArea.focus();
+            textArea.select();
+            try {
+                document.execCommand('copy');
+                mostrarToast();
+            } catch (err) {
+                console.error('Error al copiar', err);
+            }
+            textArea.remove();
+        }
+    }
+
+    function mostrarToast() {
+        const toast = document.getElementById("toast");
+        toast.className = "show";
+        setTimeout(() => { toast.className = toast.className.replace("show", ""); }, 2500);
+    }
+</script>
+</body>
+</html>
