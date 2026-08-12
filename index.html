@@ -14,7 +14,7 @@
             --text-secondary: #888888;
             --acc-color: #ffffff;
             --acc-color-hover: #e0e0e0;
-            --radius: 0px; /* Esquinas rectas */
+            --radius: 0px;
             --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
             --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
         }
@@ -35,21 +35,11 @@
 
         .container {
             width: 100%;
-            max-width: 440px;
+            max-width: 460px;
         }
 
-        h1 {
-            font-size: 1.5rem;
-            font-weight: 600;
-            letter-spacing: -0.03em;
-            margin-bottom: 0.5rem;
-        }
-
-        p.subtitle {
-            color: var(--text-secondary);
-            font-size: 0.875rem;
-            margin-bottom: 2rem;
-        }
+        h1 { font-size: 1.5rem; font-weight: 600; letter-spacing: -0.03em; margin-bottom: 0.5rem; }
+        p.subtitle { color: var(--text-secondary); font-size: 0.875rem; margin-bottom: 2rem; }
 
         .form-group { margin-bottom: 1.25rem; }
         .row { display: flex; gap: 1rem; }
@@ -76,7 +66,6 @@
             outline: none;
         }
 
-        /* Quitar spinners de inputs de números */
         input[type="number"]::-webkit-outer-spin-button,
         input[type="number"]::-webkit-inner-spin-button {
             -webkit-appearance: none;
@@ -114,7 +103,6 @@
             display: none;
         }
 
-        /* Bloque de resultados */
         .results-wrapper {
             margin-top: 2.5rem;
             border-top: 1px solid var(--border-color);
@@ -133,17 +121,48 @@
             background-color: var(--card-bg);
             border: 1px solid var(--border-color);
             border-radius: var(--radius);
-            padding: 1rem;
+            padding: 1.25rem;
             margin-bottom: 1.5rem;
             position: relative;
         }
+
+        .info-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+            gap: 1.25rem 1rem;
+            margin-top: 0.75rem;
+        }
+        .info-item { display: flex; flex-direction: column; }
+        .info-item.full-width { grid-column: 1 / -1; }
+        .info-label {
+            font-size: 0.7rem;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-bottom: 0.2rem;
+        }
+        .info-value {
+            font-size: 0.9rem;
+            color: var(--text-primary);
+            font-weight: 500;
+        }
+        .info-value.mono { font-family: var(--font-mono); }
+        .info-footer {
+            margin-top: 1.25rem;
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+            border-top: 1px solid #222;
+            padding-top: 0.75rem;
+        }
+
         .copy-block pre {
             font-family: var(--font-mono);
-            font-size: 0.875rem;
+            font-size: 0.85rem;
             color: var(--text-primary);
             white-space: pre-wrap;
             word-wrap: break-word;
             line-height: 1.6;
+            margin-top: 0.75rem;
         }
         .btn-icon {
             background: transparent;
@@ -168,15 +187,14 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 0.75rem;
         }
         .header-flex span {
-            font-size: 0.75rem;
-            color: var(--text-secondary);
-            text-transform: uppercase;
-            letter-spacing: 0.05em;
+            font-size: 0.8rem;
+            color: var(--text-primary);
+            font-weight: 600;
         }
-        .individual-list { list-style: none; display: flex; flex-direction: column; gap: 0.75rem; }
+        
+        .individual-list { list-style: none; display: flex; flex-direction: column; gap: 0.75rem; margin-top: 0.75rem; }
         .individual-item {
             display: flex;
             justify-content: space-between;
@@ -187,24 +205,16 @@
         .individual-item:last-child { border-bottom: none; padding-bottom: 0; }
         .individual-data {
             font-family: var(--font-mono);
-            font-size: 0.875rem;
+            font-size: 0.85rem;
             color: var(--text-primary);
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
             margin-right: 1rem;
         }
-        .individual-label {
-            display: block;
-            font-size: 0.75rem;
-            color: var(--text-secondary);
-            margin-bottom: 0.2rem;
-            font-family: var(--font-sans);
-        }
         a.link-map { color: #3291ff; text-decoration: none; }
         a.link-map:hover { text-decoration: underline; }
 
-        /* Toast cuadrado */
         #toast {
             visibility: hidden;
             min-width: 250px;
@@ -231,7 +241,7 @@
 <div class="container">
     <header>
         <h1>Localizador SII</h1>
-        <p class="subtitle">Ingresa el rol para obtener coordenadas y mapa.</p>
+        <p class="subtitle">Consulta roles, avalúos y coordenadas de predios.</p>
     </header>
 
     <div id="error-msg" class="error-msg"></div>
@@ -254,41 +264,81 @@
             </div>
         </div>
 
-        <button type="submit" class="primary" id="btn-submit">Buscar Ubicación</button>
+        <button type="submit" class="primary" id="btn-submit">Buscar Información</button>
     </form>
 
     <div id="results-wrapper" class="results-wrapper">
-        <h2>Resultados</h2>
+        <h2>Resultados del Predio</h2>
 
-        <!-- Bloque Completo -->
+        <div class="copy-block">
+            <div class="header-flex"><span>Información de la Propiedad</span></div>
+            <div class="info-grid">
+                <div class="info-item full-width">
+                    <span class="info-label">Dirección o Nombre</span>
+                    <div class="info-value" id="info-direccion">-</div>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">Ubicación</span>
+                    <div class="info-value" id="info-ubicacion">-</div>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">Destino</span>
+                    <div class="info-value" id="info-destino">-</div>
+                </div>
+                <div class="info-item full-width">
+                    <span class="info-label">Reavalúo</span>
+                    <div class="info-value" id="info-reavaluo">-</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="copy-block">
+            <div class="header-flex"><span>Catastro Valorizado</span></div>
+            <div class="info-grid">
+                <div class="info-item">
+                    <span class="info-label">Avalúo Total</span>
+                    <div class="info-value mono" id="info-total">$0</div>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">Avalúo Afecto</span>
+                    <div class="info-value mono" id="info-afecto">$0</div>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">Avalúo Exento</span>
+                    <div class="info-value mono" id="info-exento">$0</div>
+                </div>
+            </div>
+            <div class="info-footer" id="info-periodo">Avalúos en pesos</div>
+        </div>
+
         <div class="copy-block">
             <div class="header-flex">
-                <span>Todo el bloque</span>
+                <span>Coordenadas y Mapa</span>
                 <button type="button" class="btn-icon" onclick="copiarTexto('full-text')">Copiar</button>
             </div>
             <pre id="full-text"></pre>
         </div>
 
-        <!-- Copia Individual -->
-        <div class="copy-block" style="padding-top: 1.5rem;">
+        <div class="copy-block">
+            <div class="header-flex"><span>Copiar por separado</span></div>
             <ul class="individual-list">
                 <li class="individual-item">
                     <div style="overflow: hidden;">
-                        <span class="individual-label">Formato DMS</span>
+                        <span class="info-label">Formato DMS</span>
                         <div class="individual-data" id="dms-text"></div>
                     </div>
                     <button type="button" class="btn-icon" onclick="copiarTexto('dms-text')">Copiar</button>
                 </li>
                 <li class="individual-item">
                     <div style="overflow: hidden;">
-                        <span class="individual-label">Formato Decimal</span>
+                        <span class="info-label">Formato Decimal</span>
                         <div class="individual-data" id="dec-text"></div>
                     </div>
                     <button type="button" class="btn-icon" onclick="copiarTexto('dec-text')">Copiar</button>
                 </li>
                 <li class="individual-item">
                     <div style="overflow: hidden;">
-                        <span class="individual-label">Enlace</span>
+                        <span class="info-label">Enlace Google Maps</span>
                         <div class="individual-data">
                             <a href="#" target="_blank" class="link-map" id="link-text"></a>
                         </div>
@@ -334,6 +384,15 @@
         return texto.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toUpperCase().trim();
     }
 
+    function formatCLP(value) {
+        if (value === null || value === undefined) return "$0";
+        return new Intl.NumberFormat('es-CL', {
+            style: 'currency',
+            currency: 'CLP',
+            maximumFractionDigits: 0
+        }).format(value);
+    }
+
     function decimalToDMS(lat, lng) {
         const toDMS = (val, isLat) => {
             const absVal = Math.abs(val);
@@ -355,6 +414,7 @@
         const inputComuna = document.getElementById('comuna_nombre').value;
         const manzana = document.getElementById('manzana').value;
         const predio = document.getElementById('predio').value;
+        
         const errorMsg = document.getElementById('error-msg');
         const resultsWrapper = document.getElementById('results-wrapper');
         const btnSubmit = document.getElementById('btn-submit');
@@ -362,7 +422,7 @@
         errorMsg.style.display = 'none';
         resultsWrapper.style.display = 'none';
         btnSubmit.disabled = true;
-        btnSubmit.innerText = 'Buscando...';
+        btnSubmit.innerText = 'Consultando SII...';
 
         const comunaNorm = normalizarTexto(inputComuna);
         const codigoComuna = COMUNAS_SII[comunaNorm];
@@ -371,7 +431,7 @@
             errorMsg.innerText = `No se reconoció la comuna '${inputComuna}'.`;
             errorMsg.style.display = 'block';
             btnSubmit.disabled = false;
-            btnSubmit.innerText = 'Buscar Ubicación';
+            btnSubmit.innerText = 'Buscar Información';
             return;
         }
 
@@ -388,28 +448,40 @@
         };
 
         try {
-            const proxyUrl = "https://corsproxy.io/?https://www4.sii.cl/mapasui/services/data/mapasFacadeService/getPredioNacional";
+            const url = "https://www4.sii.cl/mapasui/services/data/mapasFacadeService/getPredioNacional";
             
-            const response = await fetch(proxyUrl, {
+            const response = await fetch(url, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(payload)
             });
 
-            if (!response.ok) throw new Error("Fallo en la conexión");
+            if (!response.ok) throw new Error("No se pudo contactar con los servidores del SII.");
 
             const data = await response.json();
             const resultData = data.data || {};
+            
             const lat = resultData.ubicacionX;
             const lng = resultData.ubicacionY;
 
             if (lat == null || lng == null) {
-                throw new Error(`No se encontró la ubicación para el ROL ${manzana}-${predio} en ${inputComuna}.`);
+                throw new Error(`El rol ${manzana}-${predio} existe pero no registra coordenadas geo-espaciales en SII.`);
             }
+
+            const dir = resultData.direccion || resultData.nombreProp || "Sin información";
+            document.getElementById('info-direccion').innerText = dir;
+            document.getElementById('info-ubicacion').innerText = resultData.ubicacion || "-";
+            document.getElementById('info-destino').innerText = resultData.destinoDescripcion || "-";
+            document.getElementById('info-reavaluo').innerText = resultData.eacsDescripcion || "-";
+
+            document.getElementById('info-total').innerText = formatCLP(resultData.valorTotal);
+            document.getElementById('info-afecto').innerText = formatCLP(resultData.valorAfecto);
+            document.getElementById('info-exento').innerText = formatCLP(resultData.valorExento);
+            document.getElementById('info-periodo').innerText = resultData.periodo ? `Avalúos en pesos del ${resultData.periodo}` : "Periodo no especificado";
 
             const decimalStr = `${lat}, ${lng}`;
             const dmsStr = decimalToDMS(lat, lng);
-            const gmapsUrl = `https://www.google.com/maps?q=${lat},{lng}`;
+            const gmapsUrl = `https://www.google.com/maps?q=${lat},${lng}`;
             const fullBlock = `${dmsStr}\n${decimalStr}\n${gmapsUrl}`;
 
             document.getElementById('full-text').innerText = fullBlock;
@@ -425,7 +497,7 @@
             errorMsg.style.display = 'block';
         } finally {
             btnSubmit.disabled = false;
-            btnSubmit.innerText = 'Buscar Ubicación';
+            btnSubmit.innerText = 'Buscar Información';
         }
     });
 
@@ -447,7 +519,7 @@
                 document.execCommand('copy');
                 mostrarToast();
             } catch (err) {
-                console.error('Error al copiar', err);
+                console.error('Error al copiar:', err);
             }
             textArea.remove();
         }
